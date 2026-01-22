@@ -4,6 +4,8 @@ import AdminMenu from "./pages/AdminMenu";
 import Reservations from "./pages/Reservations";
 import AdminTables from "./pages/AdminTables";
 import AdminReservations from "./pages/AdminReservations";
+import CartDrawer from "./components/CartDrawer";
+import KitchenDisplay from "./pages/KitchenDisplay";
 
 function App() {
   return (
@@ -22,6 +24,7 @@ function App() {
               </div>
               
               <div className="flex gap-4 text-sm text-gray-600">
+                <Link to="/kitchen" className="hover:text-orange-600 font-medium text-orange-700">Kitchen View</Link>
                 <Link to="/admin/menu" className="hover:text-orange-600">Admin Menu</Link>
                 <Link to="/admin/tables" className="hover:text-orange-600">Tables</Link>
                 <Link to="/admin/reservations" className="hover:text-orange-600">Reservations</Link>
@@ -33,11 +36,14 @@ function App() {
         <Routes>
           <Route path="/" element={<Menu />} />
           <Route path="/reservations" element={<Reservations />} />
-          <Route path="/admin" element={<AdminMenu />} /> {/* Redirect or keep? */}
+          <Route path="/kitchen" element={<KitchenDisplay />} />
+          <Route path="/admin" element={<AdminMenu />} /> 
           <Route path="/admin/menu" element={<AdminMenu />} />
           <Route path="/admin/tables" element={<AdminTables />} />
           <Route path="/admin/reservations" element={<AdminReservations />} />
         </Routes>
+
+        <CartDrawer />
       </div>
     </Router>
   );
