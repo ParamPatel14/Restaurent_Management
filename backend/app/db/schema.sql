@@ -1,0 +1,18 @@
+CREATE TABLE IF NOT EXISTS users (
+    id SERIAL PRIMARY KEY,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    role VARCHAR(20) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS restaurant_tables (
+    id SERIAL PRIMARY KEY,
+    table_number INT UNIQUE NOT NULL,
+    capacity INT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS menu_items (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    price NUMERIC(10,2) NOT NULL,
+    is_active BOOLEAN DEFAULT TRUE
+);
