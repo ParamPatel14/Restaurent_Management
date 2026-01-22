@@ -54,3 +54,11 @@ CREATE TABLE IF NOT EXISTS order_items (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS order_logs (
+    id SERIAL PRIMARY KEY,
+    order_id INT REFERENCES orders(id) ON DELETE CASCADE,
+    old_status VARCHAR(20),
+    new_status VARCHAR(20) NOT NULL,
+    changed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+

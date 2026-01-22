@@ -1,13 +1,25 @@
-from fastapi import APIRouter, HTTPException, Body
+from fastapi import APIRouter, HTTPException, Body, WebSocket, WebSocketDisconnect
 from typing import List
 from datetime import datetime
 from app.utils.db_helper import fetch_all, fetch_one, fetch_one_and_commit, execute_query, get_db_connection
 from app.schemas.order import Order, OrderCreate, OrderUpdateStatus, OrderItem
+from app.utils.websockets import manager
 
 router = APIRouter(prefix="/api/orders", tags=["Orders"])
 
+@router.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    await manager.connect(websocket)
+    try:
+        while True:
+            # Keep connection alive, maybe wait for messages (though we only broadcast mostly)
+            # If client sends something, we can handle it here
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        manager.disconnect(websocket)
+
 @router.post("/", response_model=Order)
-def create_order(order: OrderCreate):
+async def create_order(order: OrderCreate):
     conn = get_db_connection()
     cur = conn.cursor()
     try:
@@ -70,8 +82,8 @@ def create_order(order: OrderCreate):
                 menu_item_name=i["name"]
             ) for i in valid_items
         ]
-        
-        return Order(
+        # Construct response object first
+        new_order = Order(
             id=order_id,
             table_id=order.table_id,
             reservation_id=order.reservation_id,
@@ -81,6 +93,20 @@ def create_order(order: OrderCreate):
             updated_at=updated_at,
             items=response_items
         )
+        
+        # Broadcast event
+        await manager.broadcast({
+            "type": "new_order",
+            "order": {
+                "id": new_order.id,
+                "table_id": new_order.table_id,
+                "status": new_order.status,
+                "items": [{"name": i.menu_item_name, "quantity": i.quantity} for i in new_order.items],
+                "created_at": new_order.created_at.isoformat()
+            }
+        })
+        
+        return new_order
         
     except Exception as e:
         conn.rollback()
@@ -180,20 +206,54 @@ def get_orders(status: str = None):
     return orders
 
 @router.put("/{order_id}/status", response_model=Order)
-def update_order_status(order_id: int, status_update: OrderUpdateStatus):
+async def update_order_status(order_id: int, status_update: OrderUpdateStatus):
     valid_statuses = ['pending', 'preparing', 'ready', 'served', 'paid', 'cancelled']
     if status_update.status not in valid_statuses:
         raise HTTPException(status_code=400, detail="Invalid status")
         
-    query = """
-        UPDATE orders 
-        SET status = %s, updated_at = CURRENT_TIMESTAMP 
-        WHERE id = %s 
-        RETURNING id
-    """
-    result = fetch_one_and_commit(query, (status_update.status, order_id))
-    
-    if not result:
-        raise HTTPException(status_code=404, detail="Order not found")
+    conn = get_db_connection()
+    cur = conn.cursor()
+    try:
+        # Get current status
+        cur.execute("SELECT status FROM orders WHERE id = %s", (order_id,))
+        row = cur.fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="Order not found")
         
-    return get_order(order_id)
+        old_status = row[0]
+        new_status = status_update.status
+        
+        # Enforce transitions (optional, but good for "controlled updates")
+        # e.g., pending -> preparing -> ready -> served
+        # Allow cancelling from anywhere except served/paid?
+        # For now, let's just log it.
+        
+        cur.execute("""
+            UPDATE orders 
+            SET status = %s, updated_at = CURRENT_TIMESTAMP 
+            WHERE id = %s 
+        """, (new_status, order_id))
+        
+        cur.execute("""
+            INSERT INTO order_logs (order_id, old_status, new_status)
+            VALUES (%s, %s, %s)
+        """, (order_id, old_status, new_status))
+        
+        conn.commit()
+        
+        # Broadcast update
+        await manager.broadcast({
+            "type": "status_update",
+            "order_id": order_id,
+            "new_status": new_status,
+            "old_status": old_status
+        })
+        
+        return get_order(order_id)
+        
+    except Exception as e:
+        conn.rollback()
+        raise e
+    finally:
+        cur.close()
+        conn.close()
