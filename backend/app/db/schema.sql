@@ -33,3 +33,24 @@ CREATE TABLE IF NOT EXISTS reservations (
     status VARCHAR(20) DEFAULT 'pending',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE IF NOT EXISTS orders (
+    id SERIAL PRIMARY KEY,
+    table_id INT REFERENCES tables(id),
+    reservation_id INT REFERENCES reservations(id),
+    status VARCHAR(20) DEFAULT 'pending', -- pending, preparing, ready, served, paid, cancelled
+    total_amount NUMERIC(10,2) DEFAULT 0.00,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS order_items (
+    id SERIAL PRIMARY KEY,
+    order_id INT REFERENCES orders(id) ON DELETE CASCADE,
+    menu_item_id INT REFERENCES menu_items(id),
+    quantity INT NOT NULL DEFAULT 1,
+    unit_price NUMERIC(10,2) NOT NULL,
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
