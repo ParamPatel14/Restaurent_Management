@@ -39,3 +39,16 @@ class Order(OrderBase):
 
     class Config:
         from_attributes = True
+
+class PaymentCreate(BaseModel):
+    amount: float
+    payment_method: str # cash, card, online
+    transaction_id: Optional[str] = None
+
+class Payment(PaymentCreate):
+    id: int
+    order_id: int
+    payment_time: datetime
+    
+    class Config:
+        from_attributes = True

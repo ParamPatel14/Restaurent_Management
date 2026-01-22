@@ -62,3 +62,12 @@ CREATE TABLE IF NOT EXISTS order_logs (
     changed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS payments (
+    id SERIAL PRIMARY KEY,
+    order_id INT REFERENCES orders(id),
+    amount NUMERIC(10,2) NOT NULL,
+    payment_method VARCHAR(50) NOT NULL, -- cash, card, online
+    transaction_id VARCHAR(100),
+    payment_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
