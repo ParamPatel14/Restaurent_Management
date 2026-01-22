@@ -7,6 +7,7 @@ import AdminReservations from "./pages/AdminReservations";
 import CartDrawer from "./components/CartDrawer";
 import KitchenDisplay from "./pages/KitchenDisplay";
 import Billing from "./pages/Billing";
+import AdminAnalytics from "./pages/AdminAnalytics";
 
 function App() {
   return (
@@ -27,6 +28,7 @@ function App() {
               <div className="flex gap-4 text-sm text-gray-600">
                 <Link to="/kitchen" className="hover:text-orange-600 font-medium text-orange-700">Kitchen View</Link>
                 <Link to="/billing" className="hover:text-orange-600 font-medium text-green-700">Cashier</Link>
+                <Link to="/admin/analytics" className="hover:text-orange-600 font-bold text-blue-700">Analytics</Link>
                 <Link to="/admin/menu" className="hover:text-orange-600">Admin Menu</Link>
                 <Link to="/admin/tables" className="hover:text-orange-600">Tables</Link>
                 <Link to="/admin/reservations" className="hover:text-orange-600">Reservations</Link>
@@ -40,7 +42,8 @@ function App() {
           <Route path="/reservations" element={<Reservations />} />
           <Route path="/kitchen" element={<KitchenDisplay />} />
           <Route path="/billing" element={<Billing />} />
-          <Route path="/admin" element={<AdminMenu />} /> 
+          <Route path="/admin" element={<AdminAnalytics />} /> 
+          <Route path="/admin/analytics" element={<AdminAnalytics />} />
           <Route path="/admin/menu" element={<AdminMenu />} />
           <Route path="/admin/tables" element={<AdminTables />} />
           <Route path="/admin/reservations" element={<AdminReservations />} />
